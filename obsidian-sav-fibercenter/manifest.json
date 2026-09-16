@@ -1,0 +1,10 @@
+{
+	"id": "sav-fibercenter-tracker",
+	"name": "SAV FiberCenter Tracker",
+	"version": "0.1.0",
+	"minAppVersion": "1.4.0",
+	"description": "Suivi, déclenchement et clôture automatisés des SAV FTTH dans FiberCenter (FC2) à partir des portails mainteneurs R&C (Praxedo) et Circet (GoPaaS).",
+	"author": "black.panther.paris",
+	"authorUrl": "",
+	"isDesktopOnly": true
+}
