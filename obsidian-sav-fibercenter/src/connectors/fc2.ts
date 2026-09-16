@@ -2,10 +2,6 @@ import { BrowserSession } from "./browserSession";
 import { Fc2Ticket } from "./types";
 import { SiteCredentials } from "../settings";
 
-function sleep(ms: number): Promise<void> {
-	return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 /**
  * FC2 — FiberCenter (outil interne, SPA à routage hash `#/tickets`).
  *
@@ -23,7 +19,9 @@ export class Fc2Connector {
 	}
 
 	async login(): Promise<void> {
-		await this.session.goto(`${this.creds.baseUrl}/#/login`, 2000);
+		// FC2 redirige vers #/accueil après une connexion réussie (confirmé en usage réel) ;
+		// on part de la racine plutôt que de deviner l'URL exacte du formulaire de connexion.
+		await this.session.goto(this.creds.baseUrl, 2000);
 		await this.session.run(`
 			(function () {
 				const user = document.querySelector('input[name="username"], input[type="email"], #username');
@@ -41,10 +39,19 @@ export class Fc2Connector {
 				else if (form) form.submit();
 			})();
 		`);
-		await sleep(2500);
+		const finalUrl = await this.session.waitForUrl(
+			(url) => url.includes("#/accueil") || url.includes("#/tickets"),
+			8000
+		);
+		if (!finalUrl.includes("#/accueil") && !finalUrl.includes("#/tickets")) {
+			throw new Error(
+				`Connexion FC2 : pas de redirection vers #/accueil après 8s (URL actuelle : ${finalUrl}) — sélecteurs ou flux de connexion à vérifier (mode debug).`
+			);
+		}
 	}
 
 	async listTickets(): Promise<Fc2Ticket[]> {
+		// L'accueil FC2 (#/accueil) n'affiche pas les tickets : il faut naviguer explicitement vers #/tickets.
 		await this.session.goto(`${this.creds.baseUrl}/#/tickets`, 2500);
 		// TODO : FC2 est probablement une SPA adossée à une API JSON — inspecter
 		// l'onglet Network en mode debug pour appeler directement cette API

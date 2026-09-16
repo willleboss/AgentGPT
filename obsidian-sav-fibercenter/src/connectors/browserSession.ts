@@ -69,6 +69,18 @@ export class BrowserSession {
 		return win.webContents.getURL();
 	}
 
+	/** Attend qu'une condition sur l'URL courante soit vraie (utile pour confirmer une redirection post-login). */
+	async waitForUrl(matcher: (url: string) => boolean, timeoutMs = 8000, intervalMs = 300): Promise<string> {
+		const start = Date.now();
+		let url = await this.currentUrl();
+		while (Date.now() - start < timeoutMs) {
+			url = await this.currentUrl();
+			if (matcher(url)) return url;
+			await sleep(intervalMs);
+		}
+		return url;
+	}
+
 	dispose(): void {
 		if (this.win && !this.win.isDestroyed()) {
 			this.win.close();
